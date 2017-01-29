@@ -3,16 +3,12 @@ import pika
 import sys
 import zlib
 import time
-
-g_valid_languages = ['c++', 'c', 'python', 'java', 'ruby']
+import tempfile
+import subprocess
 
 def usage():
-    sys.stderr.write("Usage: ")
-    sys.stderr.write("{0} {1}\n".format(sys.argv[0], g_valid_languages))
+    sys.stderr.write("Usage: TODO")
     sys.exit(1)
-
-def valid_language(language):
-    return language in g_valid_languages
 
 def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(
@@ -37,7 +33,36 @@ def main():
     print(' [*] Waiting for logs. To exit press CTRL+C')
 
     def callback(ch, method, properties, body):
-        print(" [x] {0}, {1}".format(method.routing_key, zlib.decompress(body)))
+        code = zlib.decompress(body)
+        print(" [x] {0}, {1}".format(method.routing_key, code))
+        with tempfile.TemporaryDirectory() as td:
+            f = open(td + '/code.cpp', 'w')
+            f.write(code.decode())
+            f.close()
+
+            print('calling')
+            try:
+                compilation = subprocess.check_output(args=['g++', f.name, '-o', td + '/prog'], timeout=5)
+                print(compilation)
+            except subprocess.TimeoutExpired:
+                print('TimeoutExpired')
+            except subprocess.CalledProcessError:
+                print('CalledProcessError')
+
+            try:
+                program_output = subprocess.check_output(args=[td + '/prog'], timeout=3)
+                print(program_output)
+            except subprocess.TimeoutExpired:
+                print('TimeoutExpired')
+            except subprocess.CalledProcessError:
+                print('CalledProcessError')
+            except FileNotFoundError:
+                print('FileNotFoundError')
+
+            print('called')
+
+            while True:
+                pass
 
     channel.basic_consume(callback,
                           queue=queue_name,
