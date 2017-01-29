@@ -7,7 +7,13 @@ import os
 import zlib
 
 
-g_valid_languages = ['c++', 'c', 'python', 'java', 'ruby']
+g_languages = {
+    'C++':    'cpp',
+    'C':      'c',
+    'Python': 'py',
+    'Java':   'java',
+    'Ruby':   'rb'
+}
 
 
 def target_judge():
@@ -20,13 +26,21 @@ def problem_type():
     '''
     return "programming"
 
+def language_extension(language):
+    return g_languages[language]
+
 def main():
     '''
     '''
-    parser = argparse.ArgumentParser(description='judge code')
-    parser.add_argument('-l, --language', dest='language', help='TODO lang help', choices=g_valid_languages, default=g_valid_languages[0])
-    parser.add_argument('-f, --file', dest='file', help='TODO file help', required=True)
-    parser.add_argument('--log', dest='log_level',help='TODO log help', default='WARN')
+    parser = argparse.ArgumentParser(description='pyej client')
+    parser.add_argument('-l, --language', dest='language',
+                        help='TODO lang help',
+                        choices=list(g_languages.keys()),
+                        default=list(g_languages.keys())[0])
+    parser.add_argument('-f, --file', dest='file', help='TODO file help',
+                        required=True)
+    parser.add_argument('--log', dest='log_level',help='TODO log help',
+                        default='WARN')
     args = parser.parse_args()
 
     print(args)
@@ -61,7 +75,7 @@ def main():
 
     with open(args.file, 'r') as code:
         message = zlib.compress(code.read().encode())
-        routing_key = target_judge() + '.' + problem_type() + '.' + args.language
+        routing_key = target_judge() + '.' + problem_type() + '.' + language_extension(args.language)
         channel.basic_publish(exchange='xch_topic_pyej',
                               routing_key=routing_key,
                               body=message)
