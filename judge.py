@@ -26,6 +26,8 @@ def valid_binding_keys(binding_keys):
 
 @db_session
 def get_verdict(problem_id, language, code):
+    # TODO presentation error
+
     # compilers = {
     #     'cpp': cpp_compiler
     # }
@@ -48,19 +50,27 @@ def get_verdict(problem_id, language, code):
             logging.error('CalledProcessError on compilation')
             return Verdict.CE
         except subprocess.TimeoutExpired:
+            logging.error('TimeoutExpired on compilation')
             return Verdict.JE
 
         # RUN CODE
         try:
             problem = models.Problem[problem_id]
+            logging.debug(f'Running problem: {problem}')
+            test_cases = problem.test_cases
+            if len(test_cases) < 1:
+                logging.error('Problem without test cases on RUN CODE')
+                return Verdict.JE
 
-            for tc in problem.testcases:
+            for test_case in test_cases:
                 output = subprocess.check_output(args=[directory + '/prog'],
                                                  timeout=problem.time_limit,
                                                  encoding='utf-8',
-                                                 input=tc.input_)
+                                                 input=test_case.input_)
                 # assuming always has final endline
-                if output != (tc.output + '\n'):
+                expected_output = test_case.output + '\n'
+                if output != expected_output:
+                    logging.debug(f'Output [{output}] did not match [{expected_output}]')
                     return Verdict.WA
         except subprocess.TimeoutExpired:
             return Verdict.TLE

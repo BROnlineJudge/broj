@@ -44,12 +44,7 @@ def main():
     parser.add_argument('--log', dest='log_level',help='TODO log help',
                         default='WARN')
     args = parser.parse_args()
-
     print(args)
-
-    if os.path.getsize(args.file) > 2621440:
-        # filesize over 2.5mb
-        raise
 
     if args.log_level:
         numeric_level = getattr(logging, args.log_level.upper(), None)
@@ -61,6 +56,10 @@ def main():
     else:
         logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
                             datefmt='%Y/%m/%d %H:%M:%S')
+
+    if os.path.getsize(args.file) > 2621440:
+        logging.warn('Maximum file size is 2.5mb.')
+        sys.exit(1)
 
     # logging.debug('hey')
     # logging.info('hey')

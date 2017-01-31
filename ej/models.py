@@ -6,7 +6,7 @@ db = Database()
 class Problem(db.Entity):
     title = Required(str, unique=True)
     time_limit = Required(int)
-    testcases = Set("TestCase")
+    test_cases = Set("TestCase")
 
 class TestCase(db.Entity):
     input_ = Required(str)
