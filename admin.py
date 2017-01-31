@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import argparse
 from pony.orm import *
-import models
+from ej import models
+from ej import config
 
 
 def main():
@@ -14,8 +15,8 @@ def main():
         print(args)
         with db_session:
             p = models.Problem(title='dia da vovo', time_limit=5)
-            t1 = models.TestCase(input_='42', output='24', problem=p)
-            t2 = models.TestCase(input_='69', output='96', problem=p)
+            models.TestCase(input_='42', output='24', problem=p)
+            models.TestCase(input_='69', output='96', problem=p)
             commit()
 
     def read_problem(args):
@@ -32,7 +33,10 @@ def main():
     def delete_problem(args):
         print('delete')
         print(args)
-
+        import os
+        print(os.listdir(config.DB_PATH))
+        os.remove(config.DB_PATH + config.DB_NAME)
+        print(os.listdir(config.DB_PATH))
 
     sp = parser.add_subparsers()
 

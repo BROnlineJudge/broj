@@ -11,11 +11,9 @@ import re
 import json
 
 from pony.orm import *
-import models
-from verdict import Verdict
-
-def language_from_binding_key(binding_key):
-    return binding_key.split('.')[-1]
+from ej import models
+from ej import config
+from ej.verdict import Verdict
 
 def valid_binding_keys(binding_keys):
     for binding_key in binding_keys:
@@ -27,7 +25,7 @@ def valid_binding_keys(binding_keys):
 
 
 @db_session
-def get_verdict(language, code):
+def get_verdict(problem_id, language, code):
     # compilers = {
     #     'cpp': cpp_compiler
     # }
@@ -48,13 +46,13 @@ def get_verdict(language, code):
                            timeout=5, check=True)
         except subprocess.CalledProcessError:
             logging.error('CalledProcessError on compilation')
-            return Verdict.JE
-        except subprocess.TimeoutExpired:
             return Verdict.CE
+        except subprocess.TimeoutExpired:
+            return Verdict.JE
 
         # RUN CODE
         try:
-            problem = models.Problem[1]
+            problem = models.Problem[problem_id]
 
             for tc in problem.testcases:
                 output = subprocess.check_output(args=[directory + '/prog'],
@@ -109,22 +107,21 @@ def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(
                                          host='localhost'))
     channel = connection.channel()
-    channel.exchange_declare(exchange='xch_topic_pyej', exchange_type='topic')
+    channel.exchange_declare(exchange=config.JUDGE_XCH, exchange_type='topic')
     result = channel.queue_declare(exclusive=True)
     queue_name = result.method.queue
 
     for binding_key in args.binding_keys:
-        channel.queue_bind(exchange='xch_topic_pyej', queue=queue_name,
+        channel.queue_bind(exchange=config.JUDGE_XCH, queue=queue_name,
                            routing_key=binding_key)
 
     print(' [*] Waiting for logs. To exit press CTRL+C')
 
     def callback(ch, method, properties, body):
         logging.info(f"{method.routing_key}")
-
-        language = language_from_binding_key(method.routing_key)
-        code = zlib.decompress(body).decode()
-        verdict = get_verdict(language, code)
+        message = json.loads(zlib.decompress(body).decode())
+        verdict = get_verdict(message['problem'], message['language'],
+                              message['code'])
         print(verdict)
         # # COURIER
         # connection = pika.BlockingConnection(pika.ConnectionParameters(
@@ -139,11 +136,8 @@ def main():
         #               ))
         # connection.close()
 
-    channel.basic_consume(callback,
-                          queue=queue_name,
-                          no_ack=True)
+    channel.basic_consume(callback, queue=queue_name, no_ack=True)
     channel.start_consuming()
-
 
 if __name__ == '__main__':
     main()

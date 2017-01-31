@@ -1,4 +1,5 @@
 from pony.orm import *
+from ej import config
 
 db = Database()
 
@@ -13,5 +14,5 @@ class TestCase(db.Entity):
     problem = Required(Problem)
 
 def init(create_db=True, create_tables=True):
-    db.bind('sqlite', 'ej.sqlite', create_db=create_db)
+    db.bind('sqlite', config.DB_PATH + config.DB_NAME, create_db=create_db)
     db.generate_mapping(create_tables=create_tables)
