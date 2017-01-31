@@ -1,6 +1,11 @@
 #include <iostream>
+#include <string>
+#include <algorithm>
 
 int main() {
-    std::cout << "42" << std::endl;
+    std::string str;
+    std::cin >> str;
+    std::reverse(str.begin(), str.end());
+    std::cout << str << std::endl;
     return 0;
 }

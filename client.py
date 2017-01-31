@@ -5,7 +5,7 @@ import argparse
 import logging
 import os
 import zlib
-
+import pyej
 
 g_languages = {
     'C++':    'cpp',
@@ -33,11 +33,12 @@ def main():
     '''
     '''
     parser = argparse.ArgumentParser(description='pyej client')
-    parser.add_argument('-l, --language', dest='language',
+    parser.add_argument('-l', '--language', dest='language',
                         help='TODO lang help',
                         choices=list(g_languages.keys()),
                         default=list(g_languages.keys())[0])
-    parser.add_argument('-f, --file', dest='file', help='TODO file help',
+    parser.add_argument('-f', '--file', help='TODO file help', required=True)
+    parser.add_argument('-p', '--problem', help='TODO problem help',
                         required=True)
     parser.add_argument('--log', dest='log_level',help='TODO log help',
                         default='WARN')
@@ -66,10 +67,10 @@ def main():
     logging.error('hey')
     logging.critical('hey')
 
+    hostname = 'localhost'
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-        host='localhost'))
+            host=hostname))
     channel = connection.channel()
-
     channel.exchange_declare(exchange='xch_topic_pyej',
                              exchange_type='topic')
 
@@ -77,12 +78,11 @@ def main():
         message = zlib.compress(code.read().encode())
         routing_key = target_judge() + '.' + problem_type() + '.' + language_extension(args.language)
         channel.basic_publish(exchange='xch_topic_pyej',
-                              routing_key=routing_key,
-                              body=message)
-        print(" [x] Sent %r:%r" % (args.language, message))
+                      routing_key=routing_key,
+                      body=message)
+        print(f'[x] Sent {args.language}:{message}')
 
     connection.close()
-
 
 if __name__ == '__main__':
     main()
