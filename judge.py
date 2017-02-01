@@ -12,7 +12,7 @@ import json
 
 from pony.orm import *
 from ej import models
-from ej import config
+from ej import consts
 from ej.verdict import Verdict
 
 def valid_binding_keys(binding_keys):
@@ -23,6 +23,15 @@ def valid_binding_keys(binding_keys):
             return False
     return True
 
+def equal_test_cases(t1, t2, normalize=False):
+    if normalize:
+        return normalize_presentation(t1) == normalize_presentation(t2)
+    else:
+        return t1 == t2
+
+def normalize_presentation(s):
+    from unidecode import unidecode
+    return unidecode(s.strip().casefold())
 
 @db_session
 def get_verdict(problem_id, language, code):
@@ -34,6 +43,12 @@ def get_verdict(problem_id, language, code):
     # compiled = compilers[language](directory, filename)
     # if not compiled:
     #     return Verdict.CE
+
+    try:
+        problem = models.Problem[problem_id]
+    except pony.orm.core.ObjectNotFound:
+        logging.warn('pony.orm.core.ObjectNotFound invalid problem id')
+        return Verdict.JE
 
     with tempfile.TemporaryDirectory() as directory:
         # CODE FILE
@@ -55,7 +70,6 @@ def get_verdict(problem_id, language, code):
 
         # RUN CODE
         try:
-            problem = models.Problem[problem_id]
             logging.debug(f'Running problem: {problem}')
             test_cases = problem.test_cases
             if len(test_cases) < 1:
@@ -67,11 +81,17 @@ def get_verdict(problem_id, language, code):
                                                  timeout=problem.time_limit,
                                                  encoding='utf-8',
                                                  input=test_case.input_)
-                # assuming always has final endline
-                expected_output = test_case.output + '\n'
-                if output != expected_output:
-                    logging.debug(f'Output [{output}] did not match [{expected_output}]')
+                if not equal_test_cases(output, test_case.output):
+                    logging.info(f'Output [{output!r}] did not match [{test_case.output!r}]')
+
+                    if equal_test_cases(output, test_case.output, True):
+                        return Verdict.PE
+
+                    if output != test_case.output + '\n':
+                        return Verdict.WA
+
                     return Verdict.WA
+
         except subprocess.TimeoutExpired:
             return Verdict.TLE
         except subprocess.CalledProcessError:
@@ -117,12 +137,12 @@ def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(
                                          host='localhost'))
     channel = connection.channel()
-    channel.exchange_declare(exchange=config.JUDGE_XCH, exchange_type='topic')
+    channel.exchange_declare(exchange=consts.JUDGE_XCH, exchange_type='topic')
     result = channel.queue_declare(exclusive=True)
     queue_name = result.method.queue
 
     for binding_key in args.binding_keys:
-        channel.queue_bind(exchange=config.JUDGE_XCH, queue=queue_name,
+        channel.queue_bind(exchange=consts.JUDGE_XCH, queue=queue_name,
                            routing_key=binding_key)
 
     print(' [*] Waiting for logs. To exit press CTRL+C')

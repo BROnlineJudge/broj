@@ -84,12 +84,12 @@ def test_ac():
     code = '''
 #include <iostream>
 int main() {
-    std::cout << std::endl;
+    std::cout << "AC" << std::endl;
     return 0;
 }
     '''
 
-    do_problem_mock('ac test', 1, [''], [''])
+    do_problem_mock('ac test', 1, [''], ['AC\n'])
     verdict = judge.get_verdict(1, 'cpp', code)
     assert_equals(verdict, Verdict.AC)
 
@@ -106,3 +106,16 @@ int main() {
     do_problem_mock('wa test', 1, [''], [''])
     verdict = judge.get_verdict(1, 'cpp', code)
     assert_equals(verdict, Verdict.WA)
+
+def test_pe():
+    code = '''
+#include <iostream>
+int main() {
+    std::cout << "ANSWER" << std::endl;
+    return 0;
+}
+    '''
+
+    do_problem_mock('pe test', 1, [''], ['ANSWER'])
+    verdict = judge.get_verdict(1, 'cpp', code)
+    assert_equals(verdict, Verdict.PE)

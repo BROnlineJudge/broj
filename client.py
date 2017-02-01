@@ -6,7 +6,7 @@ import logging
 import os
 import zlib
 import json
-from ej import config
+from ej import consts
 
 g_languages = {
     'C++':    'cpp',
@@ -71,7 +71,7 @@ def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host=hostname))
     channel = connection.channel()
-    channel.exchange_declare(exchange=config.JUDGE_XCH, exchange_type='topic')
+    channel.exchange_declare(exchange=consts.JUDGE_XCH, exchange_type='topic')
 
     with open(args.file, 'r') as code_file:
         code = code_file.read()
@@ -80,9 +80,9 @@ def main():
                                    'problem': args.problem})
         message = zlib.compress(message_json.encode())
         routing_key = target_judge() + '.' + problem_type() + '.' + language
-        channel.basic_publish(exchange=config.JUDGE_XCH,
+        channel.basic_publish(exchange=consts.JUDGE_XCH,
                               routing_key=routing_key, body=message)
-        print(f'[x] Sent {args.language}:{message}')
+        print(f'[x] Sent {args.language}:\n{code}')
 
     connection.close()
 
