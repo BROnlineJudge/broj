@@ -8,27 +8,12 @@ import zlib
 import json
 from ej import consts
 
-g_languages = {
-    'C++':    'cpp',
-    'C':      'c',
-    'Python': 'py',
-    'Java':   'java',
-    'Ruby':   'rb'
-}
-
 
 def target_judge():
-    '''
-    '''
     return "server1"
 
 def problem_type():
-    '''
-    '''
     return "programming"
-
-def language_extension(language):
-    return g_languages[language]
 
 def main():
     '''
@@ -36,8 +21,8 @@ def main():
     parser = argparse.ArgumentParser(description='pyej client')
     parser.add_argument('-l', '--language', dest='language',
                         help='TODO lang help',
-                        choices=list(g_languages.keys()),
-                        default=list(g_languages.keys())[0])
+                        choices=consts.language_names,
+                        default=consts.language_names[0])
     parser.add_argument('-f', '--file', help='TODO file help', required=True)
     parser.add_argument('-p', '--problem', help='TODO problem help', type=int,
                         required=True)
@@ -61,26 +46,20 @@ def main():
         logging.warn('Maximum file size is 2.5mb.')
         sys.exit(1)
 
-    # logging.debug('hey')
-    # logging.info('hey')
-    # logging.warn('hey')
-    # logging.error('hey')
-    # logging.critical('hey')
-
     hostname = 'localhost'
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host=hostname))
     channel = connection.channel()
-    channel.exchange_declare(exchange=consts.JUDGE_XCH, exchange_type='topic')
+    channel.exchange_declare(exchange=consts.judge_exchange, exchange_type='topic')
 
     with open(args.file, 'r') as code_file:
         code = code_file.read()
-        language = language_extension(args.language)
-        message_json = json.dumps({'language': language, 'code': code,
+        language_ext = consts.languages[args.language]
+        message_json = json.dumps({'language': language_ext, 'code': code,
                                    'problem': args.problem})
         message = zlib.compress(message_json.encode())
-        routing_key = target_judge() + '.' + problem_type() + '.' + language
-        channel.basic_publish(exchange=consts.JUDGE_XCH,
+        routing_key = target_judge() + '.' + problem_type() + '.' + language_ext
+        channel.basic_publish(exchange=consts.judge_exchange,
                               routing_key=routing_key, body=message)
         print(f'[x] Sent {args.language}:\n{code}')
 

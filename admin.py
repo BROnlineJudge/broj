@@ -14,7 +14,7 @@ def main():
         print('create')
         print(args)
         with db_session:
-            p = models.Problem(title='dia da vovo', time_limit=5)
+            p = models.Problem(title='Dia da Vovó', time_limit=5)
             models.TestCase(input_='2\n42\n69\n', output='24\n96\n', problem=p)
             models.TestCase(input_='1\n55\n', output='55\n', problem=p)
             commit()

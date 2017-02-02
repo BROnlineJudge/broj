@@ -8,12 +8,16 @@ class Problem(db.Entity):
     time_limit = Required(int)
     test_cases = Set("TestCase")
 
+    def __repr__(self):
+        return f'<Problem[{self.id}]:"{self.title}">'
+
 class TestCase(db.Entity):
     input_ = Required(str, autostrip=False)
     output = Required(str, autostrip=False)
     problem = Required(Problem)
 
     def __init__(self, **kwargs):
+        # Not using pony py_check to customize ValueError message.
         # Validate '\n' as final character in output.
         if kwargs and ('output' in kwargs) and (kwargs['output'][-1] != '\n'):
             raise ValueError('Output not terminated by EOL (\\n).')

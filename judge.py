@@ -35,20 +35,16 @@ def normalize_presentation(s):
 
 @db_session
 def get_verdict(problem_id, language, code):
-    # TODO presentation error
-
-    # compilers = {
-    #     'cpp': cpp_compiler
-    # }
-    # compiled = compilers[language](directory, filename)
-    # if not compiled:
-    #     return Verdict.CE
+    if language not in consts.language_extensions:
+        logging.warn('unsupported language in get_verdict')
+        return Verdict.JE
 
     try:
         problem = models.Problem[problem_id]
     except pony.orm.core.ObjectNotFound:
         logging.warn('pony.orm.core.ObjectNotFound invalid problem id')
         return Verdict.JE
+    logging.debug(f'Running {problem!r}')
 
     with tempfile.TemporaryDirectory() as directory:
         # CODE FILE
@@ -70,7 +66,6 @@ def get_verdict(problem_id, language, code):
 
         # RUN CODE
         try:
-            logging.debug(f'Running problem: {problem}')
             test_cases = problem.test_cases
             if len(test_cases) < 1:
                 logging.error('Problem without test cases on RUN CODE')
@@ -86,9 +81,6 @@ def get_verdict(problem_id, language, code):
 
                     if equal_test_cases(output, test_case.output, True):
                         return Verdict.PE
-
-                    if output != test_case.output + '\n':
-                        return Verdict.WA
 
                     return Verdict.WA
 
@@ -137,12 +129,12 @@ def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(
                                          host='localhost'))
     channel = connection.channel()
-    channel.exchange_declare(exchange=consts.JUDGE_XCH, exchange_type='topic')
+    channel.exchange_declare(exchange=consts.judge_exchange, exchange_type='topic')
     result = channel.queue_declare(exclusive=True)
     queue_name = result.method.queue
 
     for binding_key in args.binding_keys:
-        channel.queue_bind(exchange=consts.JUDGE_XCH, queue=queue_name,
+        channel.queue_bind(exchange=consts.judge_exchange, queue=queue_name,
                            routing_key=binding_key)
 
     print(' [*] Waiting for logs. To exit press CTRL+C')
