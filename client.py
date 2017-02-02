@@ -24,6 +24,7 @@ def main():
                         choices=consts.language_names,
                         default=consts.language_names[0])
     parser.add_argument('-f', '--file', help='TODO file help', required=True)
+    parser.add_argument('-u', '--user', help='TODO user help', required=True)
     parser.add_argument('-p', '--problem', help='TODO problem help', type=int,
                         required=True)
     parser.add_argument('--log', dest='log_level',help='TODO log help',
@@ -56,7 +57,7 @@ def main():
         code = code_file.read()
         language_ext = consts.languages[args.language]
         message_json = json.dumps({'language': language_ext, 'code': code,
-                                   'problem': args.problem})
+                                   'problem': args.problem, 'user': args.user})
         message = zlib.compress(message_json.encode())
         routing_key = target_judge() + '.' + problem_type() + '.' + language_ext
         channel.basic_publish(exchange=consts.judge_exchange,

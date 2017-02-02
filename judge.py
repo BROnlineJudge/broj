@@ -48,6 +48,7 @@ def get_verdict(problem_id, language, code):
 
     with tempfile.TemporaryDirectory() as directory:
         # CODE FILE
+        code = code if code else ''
         code_file = open(directory + '/code.' + language, 'w')
         code_file.write(code)
         code_file.close()
@@ -57,11 +58,11 @@ def get_verdict(problem_id, language, code):
         try:
             subprocess.run(args=['g++', filename, '-o', directory + '/prog'],
                            timeout=5, check=True)
-        except subprocess.CalledProcessError:
-            logging.error('CalledProcessError on compilation')
+        except subprocess.CalledProcessError as cpe:
+            logging.info(cpe)
             return Verdict.CE
-        except subprocess.TimeoutExpired:
-            logging.error('TimeoutExpired on compilation')
+        except subprocess.TimeoutExpired as tle:
+            logging.error(tle)
             return Verdict.JE
 
         # RUN CODE
@@ -84,12 +85,14 @@ def get_verdict(problem_id, language, code):
 
                     return Verdict.WA
 
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as tle:
+            logging.info(tle)
             return Verdict.TLE
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as rte:
+            logging.info(rte)
             return Verdict.RTE
-        except FileNotFoundError:
-            logging.error('FileNotFoundError on code run')
+        except FileNotFoundError as fnfe:
+            logging.error(fnfe)
             return Verdict.JE
 
     return Verdict.AC
@@ -104,7 +107,6 @@ def main():
     parser.add_argument('--sql', action='store_true', default=True)
     args = parser.parse_args()
     print(args)
-
 
     if not valid_binding_keys(args.binding_keys):
         parser.print_usage(sys.stderr)
@@ -129,7 +131,8 @@ def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(
                                          host='localhost'))
     channel = connection.channel()
-    channel.exchange_declare(exchange=consts.judge_exchange, exchange_type='topic')
+    channel.exchange_declare(exchange=consts.judge_exchange,
+                             exchange_type='topic')
     result = channel.queue_declare(exclusive=True)
     queue_name = result.method.queue
 
@@ -141,22 +144,24 @@ def main():
 
     def callback(ch, method, properties, body):
         logging.info(f"{method.routing_key}")
-        message = json.loads(zlib.decompress(body).decode())
-        verdict = get_verdict(message['problem'], message['language'],
-                              message['code'])
-        print(verdict)
-        # # COURIER
-        # connection = pika.BlockingConnection(pika.ConnectionParameters(
-        #                                  host='localhost'))
-        # channel = connection.channel()
-        # channel.queue_declare(queue='courier')#, durable=True)
-        # channel.basic_publish(exchange='',
-        #               routing_key='courier',
-        #               body=zlib.compress(json.dumps(verdict).encode()),
-        #               properties=pika.BasicProperties(
-        #                  delivery_mode = 2, # make message persistent
-        #               ))
-        # connection.close()
+        msg_from_client = json.loads(zlib.decompress(body).decode())
+        verdict = get_verdict(msg_from_client['problem'],
+                              msg_from_client['language'],
+                              msg_from_client['code'])
+        print(f'{verdict!r}')
+        msg_to_courier = {**msg_from_client, **{'verdict': verdict}}
+        # COURIER
+        connection = pika.BlockingConnection(pika.ConnectionParameters(
+                                         host='localhost'))
+        channel = connection.channel()
+        channel.queue_declare(queue=consts.courier_queue)#, durable=True)
+        channel.basic_publish(exchange='',
+                      routing_key=consts.courier_queue,
+                      body=zlib.compress(json.dumps(msg_to_courier).encode()),
+                      properties=pika.BasicProperties(
+                         delivery_mode = 2, # make message persistent
+                      ))
+        connection.close()
 
     channel.basic_consume(callback, queue=queue_name, no_ack=True)
     channel.start_consuming()
