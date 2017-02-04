@@ -6,9 +6,11 @@ import time
 import tempfile
 import subprocess
 import argparse
-import logging
 import re
 import json
+
+import logging
+logger = logging.getLogger(__name__)
 
 from pony.orm import *
 from ej import models
@@ -16,6 +18,24 @@ from ej import consts
 from ej import connection
 from ej.verdict import Verdict
 
+def config_logger(level):
+    sh = logging.StreamHandler()
+    sh.setLevel(level)
+    fmt = '%(asctime)s %(levelname)-8s %(name)s %(message)s'
+    datefmt = '%Y/%m/%d %H:%M:%S'
+    sh.setFormatter(logging.Formatter(fmt, datefmt))
+    logger.addHandler(sh)
+
+def get_parsed_args():
+    parser = argparse.ArgumentParser(description='pyej judge')
+    parser.add_argument('-l', '--language', dest='language',
+                        help='TODO lang help',
+                        choices=consts.languages, required=True)
+    parser.add_argument('--log', dest='log_level',help='TODO log help',
+                        default='WARNING', choices=consts.log_levels)
+    parser.add_argument('--sql', action='store_true', default=True)
+    parser.add_argument('--host', help='TODO host help', default='localhost')
+    return parser.parse_args()
 
 def equal_test_cases(t1, t2, normalize=False):
     if normalize:
@@ -30,15 +50,15 @@ def normalize_presentation(s):
 @db_session
 def get_verdict(problem_id, language, code):
     if language not in consts.languages:
-        logging.warn('unsupported language in get_verdict')
+        logger.warn('unsupported language in get_verdict')
         return Verdict.JE
 
     try:
         problem = models.Problem[problem_id]
     except pony.orm.core.ObjectNotFound:
-        logging.warn('pony.orm.core.ObjectNotFound invalid problem id')
+        logger.warn('pony.orm.core.ObjectNotFound invalid problem id')
         return Verdict.JE
-    logging.debug(f'Running {problem!r}')
+    logger.debug(f'Running {problem!r}')
 
     with tempfile.TemporaryDirectory() as directory:
         # CODE FILE
@@ -53,17 +73,17 @@ def get_verdict(problem_id, language, code):
             subprocess.run(args=['g++', filename, '-o', directory + '/prog'],
                            timeout=5, check=True)
         except subprocess.CalledProcessError as cpe:
-            logging.info(cpe)
+            logger.info(cpe)
             return Verdict.CE
         except subprocess.TimeoutExpired as tle:
-            logging.error(tle)
+            logger.error(tle)
             return Verdict.JE
 
         # RUN CODE
         try:
             test_cases = problem.test_cases
             if len(test_cases) < 1:
-                logging.error('Problem without test cases on RUN CODE')
+                logger.error('Problem without test cases on RUN CODE')
                 return Verdict.JE
 
             for test_case in test_cases:
@@ -72,7 +92,7 @@ def get_verdict(problem_id, language, code):
                                                  encoding='utf-8',
                                                  input=test_case.input_)
                 if not equal_test_cases(output, test_case.output):
-                    logging.info(f'Output [{output!r}] did not match [{test_case.output!r}]')
+                    logger.info(f'Output [{output!r}] did not match [{test_case.output!r}]')
 
                     if equal_test_cases(output, test_case.output, True):
                         return Verdict.PE
@@ -80,49 +100,29 @@ def get_verdict(problem_id, language, code):
                     return Verdict.WA
 
         except subprocess.TimeoutExpired as tle:
-            logging.info(tle)
+            logger.info(tle)
             return Verdict.TLE
         except subprocess.CalledProcessError as rte:
-            logging.info(rte)
+            logger.info(rte)
             return Verdict.RTE
         except FileNotFoundError as fnfe:
-            logging.error(fnfe)
+            logger.error(fnfe)
             return Verdict.JE
 
     return Verdict.AC
 
 def main():
-    # Args
-    parser = argparse.ArgumentParser(description='pyej judge')
-    parser.add_argument('-l', '--language', dest='language',
-                        help='TODO lang help',
-                        choices=consts.languages, required=True)
-    parser.add_argument('--log', dest='log_level',help='TODO log help',
-                        default='WARN')
-    parser.add_argument('--sql', action='store_true', default=True)
-    parser.add_argument('--host', help='TODO host help', default='localhost')
-    args = parser.parse_args()
-    print(args)
-
-    if args.log_level:
-        numeric_level = getattr(logging, args.log_level.upper(), None)
-        if not isinstance(numeric_level, int):
-            raise ValueError(f'Invalid log level: {args.log_level}')
-        logging.basicConfig(level=numeric_level,
-                            format='%(asctime)s %(levelname)-8s %(message)s',
-                            datefmt='%Y/%m/%d %H:%M:%S')
-    else:
-        logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
-                            datefmt='%Y/%m/%d %H:%M:%S')
+    args = get_parsed_args()
+    config_logger(args.log_level)
 
     # DB
     models.init()
-    sql_debug(args.sql) # TODO working?
+    sql_debug(args.sql)
 
     print(' [*] Waiting for logs. To exit press CTRL+C')
 
     def callback(ch, method, properties, body):
-        logging.info(f"{method.routing_key}")
+        logger.info(f"{method.routing_key}")
         msg_from_client = json.loads(zlib.decompress(body).decode())
         verdict = get_verdict(msg_from_client['problem'],
                               msg_from_client['language'],
