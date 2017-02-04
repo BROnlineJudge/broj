@@ -13,15 +13,9 @@ import json
 from pony.orm import *
 from ej import models
 from ej import consts
+from ej import connection
 from ej.verdict import Verdict
 
-def valid_binding_keys(binding_keys):
-    for binding_key in binding_keys:
-        match = re.match(r'^(\*|\w{3,15})\.(\*|\w{3,15})\.(\*|\w{3,15})$',
-                         binding_key)
-        if not match:
-            return False
-    return True
 
 def equal_test_cases(t1, t2, normalize=False):
     if normalize:
@@ -35,7 +29,7 @@ def normalize_presentation(s):
 
 @db_session
 def get_verdict(problem_id, language, code):
-    if language not in consts.language_extensions:
+    if language not in consts.languages:
         logging.warn('unsupported language in get_verdict')
         return Verdict.JE
 
@@ -100,17 +94,15 @@ def get_verdict(problem_id, language, code):
 def main():
     # Args
     parser = argparse.ArgumentParser(description='pyej judge')
-    parser.add_argument('-b', '--binds', dest='binding_keys', nargs='+',
-                        help='TODO bks help', required=True)
+    parser.add_argument('-l', '--language', dest='language',
+                        help='TODO lang help',
+                        choices=consts.languages, required=True)
     parser.add_argument('--log', dest='log_level',help='TODO log help',
                         default='WARN')
     parser.add_argument('--sql', action='store_true', default=True)
+    parser.add_argument('--host', help='TODO host help', default='localhost')
     args = parser.parse_args()
     print(args)
-
-    if not valid_binding_keys(args.binding_keys):
-        parser.print_usage(sys.stderr)
-        sys.exit(1)
 
     if args.log_level:
         numeric_level = getattr(logging, args.log_level.upper(), None)
@@ -127,19 +119,6 @@ def main():
     models.init()
     sql_debug(args.sql) # TODO working?
 
-    # RabbitMQ
-    connection = pika.BlockingConnection(pika.ConnectionParameters(
-                                         host='localhost'))
-    channel = connection.channel()
-    channel.exchange_declare(exchange=consts.judge_exchange,
-                             exchange_type='topic')
-    result = channel.queue_declare(exclusive=True)
-    queue_name = result.method.queue
-
-    for binding_key in args.binding_keys:
-        channel.queue_bind(exchange=consts.judge_exchange, queue=queue_name,
-                           routing_key=binding_key)
-
     print(' [*] Waiting for logs. To exit press CTRL+C')
 
     def callback(ch, method, properties, body):
@@ -149,22 +128,24 @@ def main():
                               msg_from_client['language'],
                               msg_from_client['code'])
         print(f'{verdict!r}')
+        time.sleep(1)
+        ch.basic_ack(delivery_tag = method.delivery_tag)
         msg_to_courier = {**msg_from_client, **{'verdict': verdict}}
-        # COURIER
-        connection = pika.BlockingConnection(pika.ConnectionParameters(
-                                         host='localhost'))
-        channel = connection.channel()
-        channel.queue_declare(queue=consts.courier_queue)#, durable=True)
-        channel.basic_publish(exchange='',
-                      routing_key=consts.courier_queue,
-                      body=zlib.compress(json.dumps(msg_to_courier).encode()),
-                      properties=pika.BasicProperties(
-                         delivery_mode = 2, # make message persistent
-                      ))
-        connection.close()
+        # # COURIER
+        # connection = pika.BlockingConnection(pika.ConnectionParameters(
+        #                                  host='localhost'))
+        # channel = connection.channel()
+        # channel.queue_declare(queue=consts.courier_queue)#, durable=True)
+        # channel.basic_publish(exchange='',
+        #               routing_key=consts.courier_queue,
+        #               body=zlib.compress(json.dumps(msg_to_courier).encode()),
+        #               properties=pika.BasicProperties(
+        #                  delivery_mode = 2, # make message persistent
+        #               ))
+        # connection.close()
 
-    channel.basic_consume(callback, queue=queue_name, no_ack=True)
-    channel.start_consuming()
+    with connection.JudgeConnection(args.host, args.language) as conn:
+        conn.consume(callback)
 
 if __name__ == '__main__':
     main()
