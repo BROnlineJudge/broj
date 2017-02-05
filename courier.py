@@ -1,23 +1,42 @@
 #!/usr/bin/env python
-import pika
-import zlib
-import json
 from ej.verdict import Verdict
 from ej import consts
+from ej import connection
+import argparse
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(
-        host='localhost'))
-channel = connection.channel()
+import logging
+logger = logging.getLogger(__name__)
 
-channel.queue_declare(queue=consts.courier_queue)#, durable=True)
-print(' [*] Waiting for messages. To exit press CTRL+C')
 
-def callback(ch, method, properties, body):
-    msg_from_judge = json.loads(zlib.decompress(body).decode())
-    print(f' [x] Received {msg_from_judge}')
-    ch.basic_ack(delivery_tag = method.delivery_tag)
+def config_logger(level):
+    sh = logging.StreamHandler()
+    sh.setLevel(level)
+    fmt = '%(asctime)s %(levelname)-8s %(name)s %(message)s'
+    datefmt = '%Y/%m/%d %H:%M:%S'
+    sh.setFormatter(logging.Formatter(fmt, datefmt))
+    logger.addHandler(sh)
 
-channel.basic_qos(prefetch_count=1)
-channel.basic_consume(callback, queue=consts.courier_queue)
 
-channel.start_consuming()
+def get_parsed_args():
+    parser = argparse.ArgumentParser(description='pyej courier')
+    parser.add_argument('--log', dest='log_level',help='TODO log help',
+                        default='WARNING', choices=consts.log_levels)
+    return parser.parse_args()
+
+
+def main():
+    args = get_parsed_args()
+    config_logger(args.log_level)
+
+    def callback(ch, method, properties, body):
+        msg_from_judge = connection.decompress(body)
+        print(f' [x] Received {msg_from_judge}')
+        ch.basic_ack(delivery_tag = method.delivery_tag)
+
+    with connection.CourierConnection('localhost') as conn:
+        print('Waiting for messages...')
+        conn.consume(callback)
+
+
+if __name__ == '__main__':
+    main()

@@ -1,22 +1,16 @@
 #!/usr/bin/env python
-import pika
-import sys
-import zlib
-import time
-import tempfile
-import subprocess
-import argparse
-import re
-import json
-
-import logging
-logger = logging.getLogger(__name__)
-
 from pony.orm import *
 from ej import models
 from ej import consts
 from ej import connection
 from ej.verdict import Verdict
+import tempfile
+import subprocess
+import argparse
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 def config_logger(level):
     sh = logging.StreamHandler()
@@ -26,16 +20,18 @@ def config_logger(level):
     sh.setFormatter(logging.Formatter(fmt, datefmt))
     logger.addHandler(sh)
 
+
 def get_parsed_args():
     parser = argparse.ArgumentParser(description='pyej judge')
     parser.add_argument('-l', '--language', dest='language',
                         help='TODO lang help',
                         choices=consts.languages, required=True)
-    parser.add_argument('--log', dest='log_level',help='TODO log help',
+    parser.add_argument('--log', dest='log_level', help='TODO log help',
                         default='WARNING', choices=consts.log_levels)
     parser.add_argument('--sql', action='store_true', default=True)
     parser.add_argument('--host', help='TODO host help', default='localhost')
     return parser.parse_args()
+
 
 def equal_test_cases(t1, t2, normalize=False):
     if normalize:
@@ -43,9 +39,11 @@ def equal_test_cases(t1, t2, normalize=False):
     else:
         return t1 == t2
 
+
 def normalize_presentation(s):
     from unidecode import unidecode
     return unidecode(s.strip().casefold())
+
 
 @db_session
 def get_verdict(problem_id, language, code):
@@ -92,7 +90,8 @@ def get_verdict(problem_id, language, code):
                                                  encoding='utf-8',
                                                  input=test_case.input_)
                 if not equal_test_cases(output, test_case.output):
-                    logger.info(f'Output [{output!r}] did not match [{test_case.output!r}]')
+                    logger.info((f'Output [{output!r}] did not match'
+                                 f'[{test_case.output!r}]'))
 
                     if equal_test_cases(output, test_case.output, True):
                         return Verdict.PE
@@ -111,6 +110,7 @@ def get_verdict(problem_id, language, code):
 
     return Verdict.AC
 
+
 def main():
     args = get_parsed_args()
     config_logger(args.log_level)
@@ -122,30 +122,20 @@ def main():
     print(' [*] Waiting for logs. To exit press CTRL+C')
 
     def callback(ch, method, properties, body):
-        logger.info(f"{method.routing_key}")
-        msg_from_client = json.loads(zlib.decompress(body).decode())
+        logger.info(f'{method.routing_key}')
+        msg_from_client = connection.decompress(body)
         verdict = get_verdict(msg_from_client['problem'],
                               msg_from_client['language'],
                               msg_from_client['code'])
         print(f'{verdict!r}')
-        time.sleep(1)
-        ch.basic_ack(delivery_tag = method.delivery_tag)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
         msg_to_courier = {**msg_from_client, **{'verdict': verdict}}
-        # # COURIER
-        # connection = pika.BlockingConnection(pika.ConnectionParameters(
-        #                                  host='localhost'))
-        # channel = connection.channel()
-        # channel.queue_declare(queue=consts.courier_queue)#, durable=True)
-        # channel.basic_publish(exchange='',
-        #               routing_key=consts.courier_queue,
-        #               body=zlib.compress(json.dumps(msg_to_courier).encode()),
-        #               properties=pika.BasicProperties(
-        #                  delivery_mode = 2, # make message persistent
-        #               ))
-        # connection.close()
+        with connection.CourierConnection(args.host) as conn:
+            conn.send(msg_to_courier)
 
     with connection.JudgeConnection(args.host, args.language) as conn:
         conn.consume(callback)
+
 
 if __name__ == '__main__':
     main()
