@@ -3,6 +3,8 @@ from pony.orm import *
 from ej import models
 from ej import consts
 from ej import connection
+from ej import compilers
+from ej import exceptions
 from ej.verdict import Verdict
 import tempfile
 import subprocess
@@ -68,13 +70,12 @@ def get_verdict(problem_id, language, code):
 
         # COMPILATION
         try:
-            subprocess.run(args=['g++', filename, '-o', directory + '/prog'],
-                           timeout=5, check=True)
-        except subprocess.CalledProcessError as cpe:
-            logger.info(cpe)
+            executable = compilers.compile(language, directory, filename)
+        except exceptions.CompilationError:
+            logger.info('compilation error')
             return Verdict.CE
-        except subprocess.TimeoutExpired as tle:
-            logger.error(tle)
+        except (exceptions.JudgeError, exceptions.UnsupportedLanguage):
+            logger.error(f'internal error on compilation for {language}')
             return Verdict.JE
 
         # RUN CODE
