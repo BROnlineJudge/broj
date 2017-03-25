@@ -14,8 +14,7 @@ requirements:
 You should start by creating a virtual environment to work on:
 
 `mkvirtualenv --python=python3.6 pyej`  
-`pip install pika`  
-`pip install pony`  
+`pip install -r requirements.txt`  
 
 You will need a config file placed in `/opt/pyej/config.ini` that should look like this:
 

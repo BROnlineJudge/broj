@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 from pony.orm import *
 import configparser
+from ej import exceptions
 
 db = Database()
 
@@ -24,8 +26,13 @@ class TestCase(db.Entity):
         super().__init__(**kwargs)
 
 def init(create_db=True, create_tables=True):
+    # TODO create db when doesn't exist
+    cfg_file = '/opt/pyej/config.ini'
     cfg = configparser.ConfigParser()
-    cfg.read('/opt/pyej/config.ini')
-    db.bind('postgres', user=cfg['db']['user'], password=cfg['db']['password'],
-            database=cfg['db']['name'])
+    cfg.read(cfg_file)
+    try:
+        db.bind('postgres', user=cfg['db']['user'],
+                password=cfg['db']['password'], database=cfg['db']['name'])
+    except KeyError:
+        raise exceptions.ConfigError('Check config file {0}'.format(cfg_file))
     db.generate_mapping(create_tables=create_tables)

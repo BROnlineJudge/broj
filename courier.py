@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from ej.verdict import Verdict
 from ej import consts
 from ej import connection

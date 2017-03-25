@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import argparse
 from pony.orm import *
 from ej import models

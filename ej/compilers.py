@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from ej.verdict import Verdict
 from ej import exceptions
 import subprocess

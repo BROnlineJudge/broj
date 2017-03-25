@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from pony.orm import *
 from ej import models
 from ej import consts
@@ -49,6 +50,7 @@ def normalize_presentation(s):
 
 @db_session
 def get_verdict(problem_id, language, code):
+    # TODO lock judge after n JEs?
     if language not in consts.languages:
         logger.warn('unsupported language in get_verdict')
         return Verdict.JE

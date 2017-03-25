@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 judge_exchange = 'xch_topic_pyej'
 judge_exchange_type = 'direct'
 
