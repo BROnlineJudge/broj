@@ -1,9 +1,114 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *
-from unittest.mock import *
+from mock import *
 from ej import models
 from ej.verdict import Verdict
+import unittest
 import judge
+
+
+class TestJudge(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_tle(self):
+        code = '''
+#include <iostream>
+#include <chrono>
+#include <thread>
+int main() {
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(%ss);
+    std::cout << std::endl;
+    return 0;
+}
+        '''
+
+        do_problem_mock('tle test', 1, [''], [''])
+        verdict = judge.get_verdict(1, 'cpp', (code % 1.5))
+        self.assertEqual(verdict, Verdict.TLE)
+
+        verdict = judge.get_verdict(1, 'cpp', (code % 0.5))
+        self.assertNotEqual(verdict, Verdict.TLE)
+
+    def test_ce(self):
+        code = '''
+{
+xablau;;;;;
+}
+        '''
+
+        do_problem_mock('ce test', 1, [''], [''])
+        verdict = judge.get_verdict(1, 'cpp', code)
+        self.assertEqual(verdict, Verdict.CE)
+
+    def test_je(self):
+        code = '''
+int main() {
+    return 0;
+}
+        '''
+
+        do_problem_mock('je test', 1, [], [])
+        verdict = judge.get_verdict(1, 'cpp', code)
+        self.assertEqual(verdict, Verdict.JE)
+
+    def test_rte(self):
+        code = '''
+#include <csignal>
+int main()
+{
+    std::raise(SIGSEGV);
+    return 0;
+}
+        '''
+
+        do_problem_mock('rte test', 1, [''], [''])
+        verdict = judge.get_verdict(1, 'cpp', code)
+        self.assertEqual(verdict, Verdict.RTE)
+
+    def test_ac(self):
+        code = '''
+#include <iostream>
+int main() {
+    std::cout << "AC" << std::endl;
+    return 0;
+}
+        '''
+
+        do_problem_mock('ac test', 1, [''], ['AC\n'])
+        verdict = judge.get_verdict(1, 'cpp', code)
+        self.assertEqual(verdict, Verdict.AC)
+
+
+    def test_wa(self):
+        code = '''
+#include <iostream>
+int main() {
+    std::cout << "wa pls" << std::endl;
+    return 0;
+}
+        '''
+
+        do_problem_mock('wa test', 1, [''], [''])
+        verdict = judge.get_verdict(1, 'cpp', code)
+        self.assertEqual(verdict, Verdict.WA)
+
+    def test_pe(self):
+        code = '''
+#include <iostream>
+int main() {
+    std::cout << "ANSWER" << std::endl;
+    return 0;
+}
+        '''
+
+        do_problem_mock('pe test', 1, [''], ['ANSWER'])
+        verdict = judge.get_verdict(1, 'cpp', code)
+        self.assertEqual(verdict, Verdict.PE)
+
 
 def do_problem_mock(title, time_limit, inputs, outputs):
     if(len(inputs) != len(outputs)):
@@ -25,98 +130,5 @@ def do_problem_mock(title, time_limit, inputs, outputs):
     models.Problem.__getitem__.return_value = mock_problem
 
 
-def test_tle():
-    code = '''
-#include <iostream>
-#include <chrono>
-#include <thread>
-int main() {
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(%ss);
-    std::cout << std::endl;
-    return 0;
-}
-    '''
-
-    do_problem_mock('tle test', 1, [''], [''])
-    verdict = judge.get_verdict(1, 'cpp', (code % 1.5))
-    assert_equals(verdict, Verdict.TLE)
-
-    verdict = judge.get_verdict(1, 'cpp', (code % 0.5))
-    assert_not_equals(verdict, Verdict.TLE)
-
-def test_ce():
-    code = '''
-{
-xablau;;;;;
-}
-    '''
-
-    do_problem_mock('ce test', 1, [''], [''])
-    verdict = judge.get_verdict(1, 'cpp', code)
-    assert_equals(verdict, Verdict.CE)
-
-def test_je():
-    code = '''
-int main() {
-    return 0;
-}
-    '''
-
-    do_problem_mock('je test', 1, [], [])
-    verdict = judge.get_verdict(1, 'cpp', code)
-    assert_equals(verdict, Verdict.JE)
-
-def test_rte():
-    code = '''
-#include <csignal>
-int main()
-{
-    std::raise(SIGSEGV);
-    return 0;
-}
-    '''
-
-    do_problem_mock('rte test', 1, [''], [''])
-    verdict = judge.get_verdict(1, 'cpp', code)
-    assert_equals(verdict, Verdict.RTE)
-
-def test_ac():
-    code = '''
-#include <iostream>
-int main() {
-    std::cout << "AC" << std::endl;
-    return 0;
-}
-    '''
-
-    do_problem_mock('ac test', 1, [''], ['AC\n'])
-    verdict = judge.get_verdict(1, 'cpp', code)
-    assert_equals(verdict, Verdict.AC)
-
-
-def test_wa():
-    code = '''
-#include <iostream>
-int main() {
-    std::cout << "wa pls" << std::endl;
-    return 0;
-}
-    '''
-
-    do_problem_mock('wa test', 1, [''], [''])
-    verdict = judge.get_verdict(1, 'cpp', code)
-    assert_equals(verdict, Verdict.WA)
-
-def test_pe():
-    code = '''
-#include <iostream>
-int main() {
-    std::cout << "ANSWER" << std::endl;
-    return 0;
-}
-    '''
-
-    do_problem_mock('pe test', 1, [''], ['ANSWER'])
-    verdict = judge.get_verdict(1, 'cpp', code)
-    assert_equals(verdict, Verdict.PE)
+if __name__ == '__main__':
+    unittest.main()

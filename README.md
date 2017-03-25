@@ -46,4 +46,4 @@ The host (--host), the language (-l or --language), the file (-f or --file), the
 
 ### Running the tests:
 
-nosetests -sv ./tests/*.py  
+`./runtests.sh`  

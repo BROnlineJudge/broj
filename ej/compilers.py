@@ -22,7 +22,7 @@ def _compile_cpp(directory, filename):
     prog = directory + '/' + executable
 
     try:
-        subprocess.run(args=['g++', filename, '-o', prog],
+        subprocess.run(args=['g++', filename, '-std=c++14', '-o', prog],
                        timeout=5, check=True)
     except subprocess.CalledProcessError:
         raise exceptions.CompilationError

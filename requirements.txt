@@ -1,4 +1,5 @@
 pika
 pony
 psycopg2
-nose
+unidecode
+mock
