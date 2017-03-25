@@ -37,7 +37,7 @@ def _compile_c(directory, filename):
 
 
 def _compile_python(directory, filename):
-    raise exceptions.CompilationError
+    return filename
 
 
 def _compile_java(directory, filename):

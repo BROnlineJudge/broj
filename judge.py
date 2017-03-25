@@ -87,8 +87,12 @@ def get_verdict(problem_id, language, code):
                 logger.error('Problem without test cases on RUN CODE')
                 return Verdict.JE
 
+            args = list()
+            if(language in consts.runners):
+                args.append(consts.runners[language])
+            args.append(executable)
             for test_case in test_cases:
-                output = subprocess.check_output(args=[directory + '/prog'],
+                output = subprocess.check_output(args=args,
                                                  timeout=problem.time_limit,
                                                  encoding='utf-8',
                                                  input=test_case.input_)
