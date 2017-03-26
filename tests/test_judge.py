@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from mock import *
+from mock import MagicMock
 from ej import models
 from ej.verdict import Verdict
 import unittest
@@ -81,7 +81,6 @@ int main() {
         do_problem_mock('ac test', 1, [''], ['AC\n'])
         verdict = judge.get_verdict(1, 'cpp', code)
         self.assertEqual(verdict, Verdict.AC)
-
 
     def test_wa_cpp(self):
         code = '''

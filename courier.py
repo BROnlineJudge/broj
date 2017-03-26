@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from ej.verdict import Verdict
 from ej import consts
 from ej import connection
 import argparse
@@ -20,8 +19,9 @@ def config_logger(level):
 
 def get_parsed_args():
     parser = argparse.ArgumentParser(description='pyej courier')
-    parser.add_argument('--log', dest='log_level',help='TODO log help',
+    parser.add_argument('--log', dest='log_level', help='TODO log help',
                         default='WARNING', choices=consts.log_levels)
+    parser.add_argument('--host', help='TODO host help', default='localhost')
     return parser.parse_args()
 
 
@@ -32,9 +32,9 @@ def main():
     def callback(ch, method, properties, body):
         msg_from_judge = connection.decompress(body)
         print(f' [x] Received {msg_from_judge}')
-        ch.basic_ack(delivery_tag = method.delivery_tag)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
-    with connection.CourierConnection('localhost') as conn:
+    with connection.CourierConnection(args.host) as conn:
         print('Waiting for messages...')
         conn.consume(callback)
 

@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
+from ej import consts
+from ej import exceptions
 import pika
 import json
 import zlib
-from ej import consts
+
 
 def compress(message):
     return zlib.compress(json.dumps(message).encode())
 
+
 def decompress(message):
     return json.loads(zlib.decompress(message).decode())
 
-class JudgeConnectionError(Exception):
-    pass
 
 class JudgeConnection():
     def __init__(self, host, language):
@@ -31,7 +32,7 @@ class JudgeConnection():
     def connect(self, attempts=3):
         # Prevent declaring an invalid durable queue.
         if self.language not in consts.languages:
-            raise JudgeConnectionError
+            raise exceptions.JudgeConnectionError
 
         try:
             params = pika.ConnectionParameters(host=self.host,
@@ -39,24 +40,26 @@ class JudgeConnection():
             self.connection = pika.BlockingConnection(params)
             self.channel = self.connection.channel()
             self.channel.confirm_delivery()
-            self.channel.exchange_declare(exchange=consts.judge_exchange,
-                                          exchange_type=consts.judge_exchange_type)
+            self.channel.exchange_declare(
+                exchange=consts.judge_exchange,
+                exchange_type=consts.judge_exchange_type)
             self.channel.queue_declare(queue=self.language, durable=True)
             self.channel.queue_bind(exchange=consts.judge_exchange,
                                     queue=self.language,
                                     routing_key=self.language)
         except Exception as e:
-            raise JudgeConnectionError
+            raise exceptions.JudgeConnectionError
 
     def send(self, message):
         try:
             properties = pika.BasicProperties(
-                delivery_mode = consts.rmq_persistent_message)
-            self.channel.publish(exchange=consts.judge_exchange,
-                            routing_key=self.language, body=compress(message),
-                            mandatory=True, properties=properties)
+                delivery_mode=consts.rmq_persistent_message)
+            self.channel.publish(
+                exchange=consts.judge_exchange,
+                routing_key=self.language, body=compress(message),
+                mandatory=True, properties=properties)
         except Exception as e:
-            raise JudgeConnectionError
+            raise exceptions.JudgeConnectionError
 
     def consume(self, callback, prefetch_count=1):
         try:
@@ -64,11 +67,8 @@ class JudgeConnection():
             self.channel.basic_consume(callback, queue=self.language)
             self.channel.start_consuming()
         except Exception as e:
-            raise JudgeConnectionError
+            raise exceptions.JudgeConnectionError
 
-
-class CourierConnectionError(Exception):
-    pass
 
 class CourierConnection():
     def __init__(self, host):
@@ -91,24 +91,26 @@ class CourierConnection():
             self.connection = pika.BlockingConnection(params)
             self.channel = self.connection.channel()
             self.channel.confirm_delivery()
-            self.channel.exchange_declare(exchange=consts.courier_exchange,
-                                          exchange_type=consts.courier_exchange_type)
+            self.channel.exchange_declare(
+                exchange=consts.courier_exchange,
+                exchange_type=consts.courier_exchange_type)
             self.channel.queue_declare(queue=consts.courier_queue, durable=True)
             self.channel.queue_bind(exchange=consts.courier_exchange,
                                     queue=consts.courier_queue,
                                     routing_key=consts.courier_rk)
         except Exception as e:
-            raise CourierConnectionError
+            raise exceptions.CourierConnectionError
 
     def send(self, message):
         try:
             properties = pika.BasicProperties(
-                delivery_mode = consts.rmq_persistent_message)
-            self.channel.publish(exchange=consts.courier_exchange,
-                            routing_key=consts.courier_rk, body=compress(message),
-                            mandatory=True, properties=properties)
+                delivery_mode=consts.rmq_persistent_message)
+            self.channel.publish(
+                exchange=consts.courier_exchange,
+                routing_key=consts.courier_rk, body=compress(message),
+                mandatory=True, properties=properties)
         except Exception as e:
-            raise CourierConnectionError
+            raise exceptions.CourierConnectionError
 
     def consume(self, callback, prefetch_count=1):
         try:
@@ -116,4 +118,4 @@ class CourierConnection():
             self.channel.basic_consume(callback, queue=consts.courier_queue)
             self.channel.start_consuming()
         except Exception as e:
-            raise CourierConnectionError
+            raise exceptions.CourierConnectionError

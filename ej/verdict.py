@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from enum import IntEnum, unique
 
+
 @unique
 class Verdict(IntEnum):
     AC = 1
@@ -30,4 +31,3 @@ class Verdict(IntEnum):
 
     def __repr__(self):
         return '<Verdict : \'' + str(self) + '\'>'
-

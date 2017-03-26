@@ -1,21 +1,27 @@
-language: cpp
 compiler: gcc
 dist: trusty
+
+language: python
+python:
+    - "3.6"
 
 before_install:
   # C++14
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get update -qq
 
-language: python
-python:
-    - "3.6"
-
-# command to install dependencies
 install: 
-  - "pip install -r requirements.txt"
+  - pip install -r requirements.txt
+  - pip install codecov
   # C++14
   - sudo apt-get install -qq g++-5
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 90
-# command to run tests
-script: ./runtests.sh
+
+before_script:
+  flake8
+
+script:
+  ./runtests.sh
+
+after_success:
+  codecov

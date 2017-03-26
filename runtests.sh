@@ -1,2 +1,3 @@
 #!/bin/bash
-python3.6 -m unittest discover -s ./tests -v
+coverage run --source=ej,. --omit=tests/* -m unittest discover -s ./tests -v
+coverage report

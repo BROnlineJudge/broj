@@ -13,3 +13,11 @@ class UnsupportedLanguage(Exception):
 
 class ConfigError(Exception):
     pass
+
+
+class JudgeConnectionError(Exception):
+    pass
+
+
+class CourierConnectionError(Exception):
+    pass

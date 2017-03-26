@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from ej.verdict import Verdict
 from ej import exceptions
 import subprocess
 
@@ -48,7 +47,6 @@ def _compile_ruby(directory, filename):
     raise exceptions.CompilationError
 
 
-
 _dispatch_compiler = {
     'cpp': _compile_cpp,
     'c': _compile_c,
@@ -56,4 +54,3 @@ _dispatch_compiler = {
     'java': _compile_java,
     'rb': _compile_ruby,
 }
-

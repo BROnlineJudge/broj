@@ -3,3 +3,5 @@ pony
 psycopg2
 unidecode
 mock
+flake8
+coverage

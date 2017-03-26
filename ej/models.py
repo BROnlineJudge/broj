@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from pony.orm import *
+from pony.orm import Database, Required, Optional, Set
 import configparser
 from ej import exceptions
 
 db = Database()
+
 
 class Problem(db.Entity):
     title = Required(str, unique=True)
@@ -13,6 +14,7 @@ class Problem(db.Entity):
 
     def __repr__(self):
         return f'<Problem[{self.id}]:"{self.title}">'
+
 
 class TestCase(db.Entity):
     input_ = Required(str, autostrip=False)
@@ -26,9 +28,10 @@ class TestCase(db.Entity):
             raise ValueError('Output not terminated by EOL (\\n).')
         super().__init__(**kwargs)
 
+
 def init(create_db=True, create_tables=True):
     # TODO create db when doesn't exist
-    cfg_file = '/opt/pyej/config.ini'
+    cfg_file = '/opt/broj/config.ini'
     cfg = configparser.ConfigParser()
     cfg.read(cfg_file)
     try:

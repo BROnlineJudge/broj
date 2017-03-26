@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from pony.orm import *
+from pony.orm import db_session, sql_debug
 from ej import models
 from ej import consts
 from ej import connection
 from ej import compilers
 from ej import exceptions
 from ej.verdict import Verdict
+import pony
 import tempfile
 import subprocess
 import argparse
@@ -98,14 +99,18 @@ def get_verdict(problem_id, language, code):
                                                  input=test_case.input_)
                 if problem.check_code:
                     exec(problem.check_code, globals())
-                    if not check(test_case.input_, test_case.output, output):
-                        return Verdict.WA
-                    
+                    try:
+                        if not check(test_case.input_,           # noqa: F821
+                                     test_case.output, output):
+                            return Verdict.WA
+                    except:
+                        return Verdict.JE
                 elif not equal_test_cases(output, test_case.output):
                     logger.info((f'Output [{output!r}] did not match'
                                  f'[{test_case.output!r}]'))
 
-                    if equal_test_cases(output, test_case.output, normalize=True):
+                    if equal_test_cases(output, test_case.output,
+                                        normalize=True):
                         return Verdict.PE
 
                     return Verdict.WA
