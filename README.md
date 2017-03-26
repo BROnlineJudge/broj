@@ -1,5 +1,7 @@
 # BROJ (BR Online Judge)
 
+[![Build Status](https://travis-ci.org/BROnlineJudge/broj.svg?branch=master)](https://travis-ci.org/BROnlineJudge/broj)
+
 BROJ is an implementation of a fault tolerant electronic judge capable of withstanding large processing loads. Designed for application on educational contexts that require mass grading, such as programming competitions.  
 
 ## Setting up the environment:
