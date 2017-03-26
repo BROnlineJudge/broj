@@ -96,11 +96,16 @@ def get_verdict(problem_id, language, code):
                                                  timeout=problem.time_limit,
                                                  encoding='utf-8',
                                                  input=test_case.input_)
-                if not equal_test_cases(output, test_case.output):
+                if problem.check_code:
+                    exec(problem.check_code, globals())
+                    if not check(test_case.input_, test_case.output, output):
+                        return Verdict.WA
+                    
+                elif not equal_test_cases(output, test_case.output):
                     logger.info((f'Output [{output!r}] did not match'
                                  f'[{test_case.output!r}]'))
 
-                    if equal_test_cases(output, test_case.output, True):
+                    if equal_test_cases(output, test_case.output, normalize=True):
                         return Verdict.PE
 
                     return Verdict.WA

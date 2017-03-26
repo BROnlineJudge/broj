@@ -15,9 +15,13 @@ def main():
         print('create')
         print(args)
         with db_session:
-            p = models.Problem(title='Dia da Vovó', time_limit=5)
+            p = models.Problem(title='Dia da Vovó', time_limit=5, check_code="")
             models.TestCase(input_='2\n42\n69\n', output='24\n96\n', problem=p)
             models.TestCase(input_='1\n55\n', output='55\n', problem=p)
+            p2 = models.Problem(title='Divide by 2', time_limit=1, 
+                                check_code='def check(input, output, user_output):\n    import io\n    inbuf = io.StringIO(input)\n    a = float(inbuf.read())\n    outbuf = io.StringIO(user_output)\n    b = float(outbuf.read())\n    if(abs(a/2.0 - b) < 1e-6):\n        return True\n    return False\n')
+            models.TestCase(input_='10\n', output='5\n', problem=p2)
+            models.TestCase(input_='11\n', output='5.5\n', problem=p2)
             commit()
 
     def read_problem(args):

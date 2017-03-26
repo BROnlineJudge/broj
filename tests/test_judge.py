@@ -162,14 +162,33 @@ print(1/0)
         verdict = judge.get_verdict(1, 'py', code)
         self.assertEqual(verdict, Verdict.RTE)
 
+    def test_custom_check(self):
+        code = '''
+print(5)
+        '''
+        check = '''
+def check(a,b,c):
+    return abs(float(c)-float(b)) < 1e-6
+        '''
+        do_problem_mock('ac test', 1, [''], ["5.0"], check)
+        verdict = judge.get_verdict(1, 'py', code)
+        self.assertEqual(verdict, Verdict.AC)
+        do_problem_mock('ac test', 1, [''], ["5.0000001"], check)
+        verdict = judge.get_verdict(1, 'py', code)
+        self.assertEqual(verdict, Verdict.AC)
+        do_problem_mock('ac test', 1, [''], ["5.000001"], check)
+        verdict = judge.get_verdict(1, 'py', code)
+        self.assertEqual(verdict, Verdict.WA)
 
-def do_problem_mock(title, time_limit, inputs, outputs):
+
+def do_problem_mock(title, time_limit, inputs, outputs, code=""):
     if(len(inputs) != len(outputs)):
         raise
 
     mock_problem = MagicMock()
     mock_problem.title = title
     mock_problem.time_limit = time_limit
+    mock_problem.check_code = code
     mock_problem.test_cases = []
 
     for i in range(0, len(inputs)):

@@ -8,6 +8,7 @@ db = Database()
 class Problem(db.Entity):
     title = Required(str, unique=True)
     time_limit = Required(int)
+    check_code = Optional(str)
     test_cases = Set("TestCase")
 
     def __repr__(self):
