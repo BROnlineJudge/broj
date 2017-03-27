@@ -7,9 +7,9 @@ courier_exchange_type = 'direct'
 courier_rk = 'courier_rk'
 courier_queue = 'q_courier'
 
-languages = ['cpp', 'c', 'py', 'java', 'rb']
+languages = ['cpp', 'py']
 
-runners = {'py': 'python3', 'java': 'javac', 'rb': 'irb'}
+runners = {'py': 'python3'}
 
 rmq_persistent_message = 2
 

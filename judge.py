@@ -88,7 +88,7 @@ def get_verdict(problem_id, language, code):
                 logger.error('Problem without test cases on RUN CODE')
                 return Verdict.JE
 
-            args = list()
+            args = []
             if(language in consts.runners):
                 args.append(consts.runners[language])
             args.append(executable)
