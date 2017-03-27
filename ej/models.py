@@ -35,8 +35,8 @@ def init(create_db=True, create_tables=True):
     cfg = configparser.ConfigParser()
     cfg.read(cfg_file)
     try:
-        db.bind('postgres', user=cfg['db']['user'],
-                password=cfg['db']['password'], database=cfg['db']['name'])
+        db.bind('postgres', database=cfg['db']['name'], user=cfg['db']['user'],
+                password=cfg['db']['password'], host=cfg['db']['host'])
     except KeyError:
         raise exceptions.ConfigError('Check config file {0}'.format(cfg_file))
     db.generate_mapping(create_tables=create_tables)
