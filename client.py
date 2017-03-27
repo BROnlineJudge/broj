@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from ej import connection
+from ej import connections
 from ej import consts
 import argparse
 import os
@@ -42,7 +42,7 @@ def main():
         logger.warn('Maximum file size is 2.5mb.')
         sys.exit(1)
 
-    with connection.JudgeConnection(args.host, args.language) as conn:
+    with connections.JudgeConnection(args.host, args.language) as conn:
         with open(args.file, 'r') as code_file:
             code = code_file.read()
             message = {'language': args.language,

@@ -6,7 +6,7 @@ import json
 import zlib
 
 
-def compress(message):
+def _compress(message):
     return zlib.compress(json.dumps(message).encode())
 
 
@@ -47,7 +47,7 @@ class JudgeConnection():
             self.channel.queue_bind(exchange=consts.judge_exchange,
                                     queue=self.language,
                                     routing_key=self.language)
-        except Exception as e:
+        except Exception:
             raise exceptions.JudgeConnectionError
 
     def send(self, message):
@@ -56,9 +56,9 @@ class JudgeConnection():
                 delivery_mode=consts.rmq_persistent_message)
             self.channel.publish(
                 exchange=consts.judge_exchange,
-                routing_key=self.language, body=compress(message),
+                routing_key=self.language, body=_compress(message),
                 mandatory=True, properties=properties)
-        except Exception as e:
+        except Exception:
             raise exceptions.JudgeConnectionError
 
     def consume(self, callback, prefetch_count=1):
@@ -66,7 +66,7 @@ class JudgeConnection():
             self.channel.basic_qos(prefetch_count=prefetch_count)
             self.channel.basic_consume(callback, queue=self.language)
             self.channel.start_consuming()
-        except Exception as e:
+        except Exception:
             raise exceptions.JudgeConnectionError
 
 
@@ -98,7 +98,7 @@ class CourierConnection():
             self.channel.queue_bind(exchange=consts.courier_exchange,
                                     queue=consts.courier_queue,
                                     routing_key=consts.courier_rk)
-        except Exception as e:
+        except Exception:
             raise exceptions.CourierConnectionError
 
     def send(self, message):
@@ -107,9 +107,9 @@ class CourierConnection():
                 delivery_mode=consts.rmq_persistent_message)
             self.channel.publish(
                 exchange=consts.courier_exchange,
-                routing_key=consts.courier_rk, body=compress(message),
+                routing_key=consts.courier_rk, body=_compress(message),
                 mandatory=True, properties=properties)
-        except Exception as e:
+        except Exception:
             raise exceptions.CourierConnectionError
 
     def consume(self, callback, prefetch_count=1):
@@ -117,5 +117,5 @@ class CourierConnection():
             self.channel.basic_qos(prefetch_count=prefetch_count)
             self.channel.basic_consume(callback, queue=consts.courier_queue)
             self.channel.start_consuming()
-        except Exception as e:
+        except Exception:
             raise exceptions.CourierConnectionError

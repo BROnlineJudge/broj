@@ -3,7 +3,7 @@
 from pony.orm import db_session, sql_debug
 from ej import models
 from ej import consts
-from ej import connection
+from ej import connections
 from ej import compilers
 from ej import exceptions
 from ej.verdict import Verdict
@@ -140,17 +140,17 @@ def main():
 
     def callback(ch, method, properties, body):
         logger.info(f'{method.routing_key}')
-        msg_from_client = connection.decompress(body)
+        msg_from_client = connections.decompress(body)
         verdict = get_verdict(msg_from_client['problem'],
                               msg_from_client['language'],
                               msg_from_client['code'])
         print(f'{verdict!r}')
         ch.basic_ack(delivery_tag=method.delivery_tag)
         msg_to_courier = {**msg_from_client, **{'verdict': verdict}}
-        with connection.CourierConnection(args.host) as conn:
+        with connections.CourierConnection(args.host) as conn:
             conn.send(msg_to_courier)
 
-    with connection.JudgeConnection(args.host, args.language) as conn:
+    with connections.JudgeConnection(args.host, args.language) as conn:
         conn.consume(callback)
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from ej import consts
-from ej import connection
+from ej import connections
 import argparse
 
 import logging
@@ -30,11 +30,11 @@ def main():
     config_logger(args.log_level)
 
     def callback(ch, method, properties, body):
-        msg_from_judge = connection.decompress(body)
+        msg_from_judge = connections.decompress(body)
         print(f' [x] Received {msg_from_judge}')
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
-    with connection.CourierConnection(args.host) as conn:
+    with connections.CourierConnection(args.host) as conn:
         print('Waiting for messages...')
         conn.consume(callback)
 
