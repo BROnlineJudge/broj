@@ -1,3 +1,4 @@
+.vagrant/
 ej.sqlite
 prog
 config.ini
