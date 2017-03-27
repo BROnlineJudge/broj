@@ -1,7 +1,7 @@
 # Update
-# execute 'add-apt-repository -y ppa:ubuntu-toolchain-r/test'
-# execute 'add-apt-repository ppa:fkrull/deadsnakes'
-# execute 'apt-get update'
+execute 'add-apt-repository -y ppa:ubuntu-toolchain-r/test'
+execute 'add-apt-repository ppa:fkrull/deadsnakes'
+execute 'apt-get update'
 
 # GCC / G++
 package 'gcc-6'
