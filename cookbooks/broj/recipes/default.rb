@@ -32,6 +32,9 @@ execute "createdb -O broj broj_dev" do
   not_if 'psql -lqt | cut -d \| -f 1 | grep -qw broj_dev'
 end
 
+# RabbitMQ
+package 'rabbitmq-server'
+
 # BROJ config file
 execute 'mkdir -p /opt/broj'
 execute 'chown vagrant -R /opt/broj'
