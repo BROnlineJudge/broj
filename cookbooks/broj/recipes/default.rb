@@ -1,13 +1,29 @@
-# Update
+# # Update
 execute 'add-apt-repository -y ppa:ubuntu-toolchain-r/test'
 execute 'add-apt-repository ppa:fkrull/deadsnakes'
 execute 'apt-get update'
 
-# GCC / G++
+# # GCC / G++
 package 'gcc-6'
-execute 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 90'
+execute 'gcc --version'
+execute 'update gcc 1' do
+  command 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 90 && gcc --version'
+  not_if 'gcc --version | grep -q "gcc (Ubuntu 6."'
+end
+execute 'update gcc 2' do
+  command 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 90 && gcc --version'
+  not_if 'gcc --version | grep -q "gcc (Ubuntu 6."'
+end
 package 'g++-6'
-execute 'update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90'
+execute 'update g++ 1' do
+  command 'update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90 && g++ --version'
+  not_if 'g++ --version | grep -q "g++ (Ubuntu 6."'
+end
+execute 'update g++ 2' do
+  command 'update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90 && g++ --version'
+  not_if 'g++ --version | grep -q "g++ (Ubuntu 6."'
+end
+execute 'g++ --version'
 
 # Python 3.6
 package 'python3.6'
