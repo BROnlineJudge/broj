@@ -28,7 +28,7 @@ def get_parsed_args():
                         default='INFO', choices=consts.log_levels)
     parser.add_argument('-f', '--file', help='TODO file help', required=True)
     parser.add_argument('-u', '--user', help='TODO user help', required=True)
-    parser.add_argument('-p', '--problem', help='TODO problem help', type=int,
+    parser.add_argument('-p', '--problem', help='TODO problem help',
                         required=True)
     parser.add_argument('--host', help='TODO host help', default='localhost')
     return parser.parse_args()

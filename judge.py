@@ -57,7 +57,9 @@ def get_verdict(problem_id, language, code):
         return Verdict.JE
 
     try:
-        problem = models.Problem[problem_id]
+        problem = models.Problem.select(lambda p: p.title == problem_id).first()
+        if(problem == None):
+            return Verdict.JE
     except pony.orm.core.ObjectNotFound:
         logger.warn('pony.orm.core.ObjectNotFound invalid problem id')
         return Verdict.JE

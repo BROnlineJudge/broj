@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 from ej import consts
 from ej import connection
+from ej import verdict
 import argparse
+import requests
 
 import logging
 logger = logging.getLogger(__name__)
@@ -32,6 +34,8 @@ def main():
     def callback(ch, method, properties, body):
         msg_from_judge = connection.decompress(body)
         print(f' [x] Received {msg_from_judge}')
+        payload = {'submission' : { 'verdict' : verdict.Verdict(msg_from_judge['verdict']).__str__()}}
+        r = requests.patch(msg_from_judge['user'], json=payload)
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     with connection.CourierConnection(args.host) as conn:
