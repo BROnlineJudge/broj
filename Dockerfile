@@ -1,8 +1,9 @@
 FROM python:latest
 
-RUN pip install pika
-
 COPY . /var/pyej
 WORKDIR /var/pyej
+RUN pip install -r requirements.txt
 
-CMD ["python", "./judge.py", "-b", "*.*.*"]
+EXPOSE 5432
+
+CMD ["python", "./judge.py", "-l", "cpp"]

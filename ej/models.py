@@ -31,12 +31,12 @@ class TestCase(db.Entity):
 
 def init(create_db=True, create_tables=True):
     # TODO create db when doesn't exist
-    cfg_file = '/opt/broj/config.ini'
+    cfg_file = 'config.ini'
     cfg = configparser.ConfigParser()
     cfg.read(cfg_file)
     try:
         db.bind('postgres', user=cfg['db']['user'],
-                password=cfg['db']['password'], database=cfg['db']['name'])
+                password=cfg['db']['password'], host="127.0.0.1", database=cfg['db']['name'])
     except KeyError:
         raise exceptions.ConfigError('Check config file {0}'.format(cfg_file))
     db.generate_mapping(create_tables=create_tables)
