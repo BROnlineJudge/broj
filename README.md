@@ -13,7 +13,7 @@ Requirements:
 
 You should start by [creating a virtual environment](https://virtualenvwrapper.readthedocs.io/) to work on:  
 ```sh
-$ mkvirtualenv --python=python3.6 broj
+$ mkvirtualenv --python=/usr/bin/python3.6 broj
 $ pip install -r requirements.txt
 ```
 
