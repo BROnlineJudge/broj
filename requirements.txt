@@ -5,3 +5,4 @@ unidecode
 mock
 flake8
 coverage
+requests

@@ -17,7 +17,7 @@ $ mkvirtualenv --python=python3.6 broj
 $ pip install -r requirements.txt
 ```
 
-You will need a config file placed in `/opt/broj/config.ini` that should look like this:  
+You will need a local config file `config.ini` that should look like this:  
 ```ini
 [db]
 user = <user>
@@ -30,19 +30,32 @@ A database called **broj_dev** is required on postgres, it can be created with:
 $ sudo -u postgres psql
 $ CREATE DATABASE broj_dev;
 ```
+Create the database admin user:
+```sh
+$ sudo -u postgres createuser <username>
+$ sudo -u postgres psql
+alter user <username> with encrypted password '<password>';
+grant all privileges on database <dbname> to <username> ;
+```
 
 Now the database can be populated with a dummy problem running by `./admin.py create`. To check the database run `./admin.py read`.  
 
-## Running:
+If you have any trouble with locales, use the command
 
-##### Client
-```sh
-./client.py -l cpp -f ./test_code_cpp.cpp -u 1 -p 1
-```
+$ sudo dpkg-reconfigure locales
+
+and select 'pt_BR.UTF-8' as the default locale.
+
+## Running:
 
 ##### Judge
 ```sh
 ./judge.py -l cpp
+```
+
+##### Client
+```sh
+./client.py -l cpp -f ./solutions/1.cpp -u localhost -p "Dia da Vovó"
 ```
 
 ##### Courier
